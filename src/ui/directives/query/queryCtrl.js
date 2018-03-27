@@ -54,6 +54,11 @@ angular.module('app').controller('queryCtrl', [
 
       let defaultExpression = `db${expressionCollectionName}.find({\n  \n})`;
 
+      $scope.sortby = {
+        order: '',
+        value: '-1',
+        key: ''
+      };
       $scope.openDocumentContextMenu = (doc) => {
         if (!doc) return;
 
@@ -86,6 +91,35 @@ angular.module('app').controller('queryCtrl', [
       };
 
       $scope.evaluateExpression = () => {
+          if($scope.form.expression.indexOf('sort') == -1){ //si  no esta ordenado
+              $scope.sortby.order = "";
+              $scope.sortby.value = "-1";
+          }else{
+              if($scope.form.expression.indexOf($scope.sortby.key+': 1}') != -1){
+                  $scope.sortby.order = "asc";
+              }else if ($scope.form.expression.indexOf($scope.sortby.key+': -1}') != -1) {
+                  $scope.sortby.order = "desc";
+              }
+
+          }
+        _evalExpression($scope.form.expression);
+      };
+      //SORT BY DATE
+      $scope.sortByDate = () => {
+         switch ($scope.sortby.order) {
+             case 'Desc':
+                 $scope.sortby.order = "Asc";
+                 $scope.sortby.value = "1";
+                 break;
+             case 'Asc':
+                $scope.sortby.order = "Desc";
+                $scope.sortby.value = "-1";
+                break;
+            default:
+                $scope.sortby.order = "Desc";
+                $scope.sortby.value = "-1";
+         };
+        $scope.form.expression = `db${expressionCollectionName}.find({\n  \n}).sort({${$scope.sortby.key}: ${$scope.sortby.value}})`;
         _evalExpression($scope.form.expression);
       };
 
@@ -151,6 +185,13 @@ angular.module('app').controller('queryCtrl', [
             $scope.keyValueResults = expressionResult.keyValueResults || [];
             for (let i = 0; i < $scope.keyValueResults.length; i++) {
               $scope.keyValueResults[i]._index = i;
+              console.log($scope.keyValueResults[i]);
+              for (var k = 0; k < $scope.keyValueResults[i].keyValues.length; k++) {
+                  if($scope.keyValueResults[i].keyValues[k].type == "date"){
+                      $scope.sortby.key = $scope.keyValueResults[i].keyValues[k].key;
+                  }
+
+              }
             }
 
             if (expressionResult.mongoCollectionName && expressionResult.mongoMethodName !== 'count') {
